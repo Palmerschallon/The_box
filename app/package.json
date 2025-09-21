@@ -1,0 +1,12 @@
+{
+  "name": "the-box",
+  "version": "0.1.0",
+  "description": "A space for creative experiments and ideas.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["creativity", "sandbox", "experimental"],
+  "author": "Palmerschallon",
+  "license": "MIT"
+}

@@ -1,0 +1,6 @@
+# Sandbox Ideas
+
+- Try a creative script that generates random poetry.
+- Experiment with a simple interactive prompt in Node.
+- Sketch out a game or puzzle concept.
+- Doodle notes for future modules.

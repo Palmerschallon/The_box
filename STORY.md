@@ -1,16 +1,17 @@
-# Project Story
+# The Box: Project Story
 
-This project is an open box—ready for your creativity.
+_The Box is a space for open creation—a place for ideas to grow, mutate, and become anything you imagine._
 
 ## Vision
 
-- Build something new, useful, or fun.
-- Experiment with ideas and technologies.
-- Share your journey and progress.
+- Start simple. Build each part with curiosity.
+- Let structure and creativity evolve together.
+- Every file, every note, and every script is part of the living story.
 
-## Inspiration
+## Next Steps
 
-Every project starts with a spark.  
-This space is for you to document the origins, inspirations, and goals that drive this work.
+- Experiment in the sandbox.
+- Grow the main app with creative modules.
+- Document your journey—this story is yours.
 
-Feel free to update this story as your project evolves!
+---
