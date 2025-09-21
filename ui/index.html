@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Box - Impossibilitron</title>
+  <style>
+    body { background: #0a0a0f; color: #e0e0e0; font-family: monospace; margin: 0; }
+    h1 { font-size: 1.7em; letter-spacing: 0.12em; margin: 2em 0 1em; text-align: center; }
+    #window { display: block; margin: 0 auto 1em; background: #222; border: 2px solid #444; }
+    .controls { width: 640px; margin: 0 auto 2em; display:flex; gap:2em; justify-content:center;}
+    .controls label { color:#b7b7ff; font-size:1em;}
+    .controls input[type=range] { width:120px; }
+    #mute { margin-left:2em; background: #191932; color:#fff; border:1px solid #333; font-size:1em; padding:0.3em 1.2em;}
+    #artifact { margin: 1em auto; padding: 1em; background: #191932; color: #fff; font-size: 1.05em; white-space: pre-wrap; max-width: 640px; border-radius: 6px; border: 1px solid #323287; display:none;}
+    .meta { color: #666; font-size: 0.9em; text-align: center; margin-top:2em;}
+  </style>
+</head>
+<body>
+  <h1>The Box: Impossibilitron</h1>
+  <canvas id="window" width="640" height="240"></canvas>
+  <div class="controls">
+    <label>Glitch <input id="glitch" type="range" min="0" max="100" value="50"></label>
+    <label>Entropy <input id="entropy" type="range" min="0" max="100" value="50"></label>
+    <label>Remix <input id="remix" type="range" min="0" max="100" value="50"></label>
+    <button id="mute">Mute Static</button>
+  </div>
+  <div class="meta">Listening in: <span id="listeners"></span><br>Last update: 2025-09-21 06:40 UTC</div>
+  <div id="artifact"></div>
+  <script>
+    // Controls
+    let glitch = 50, entropy = 50, remix = 50;
+    document.getElementById('glitch').oninput = e => glitch = +e.target.value;
+    document.getElementById('entropy').oninput = e => entropy = +e.target.value;
+    document.getElementById('remix').oninput = e => remix = +e.target.value;
+
+    // Glitchy canvas static and tuning
+    const canvas = document.getElementById('window');
+    const ctx = canvas.getContext('2d');
+    let t = 0;
+    let listeners = Math.floor(Math.random() * 8) + 1;
+
+    // Store "fragments" as clickable rectangles
+    let fragments = [];
+    function randomColor() {
+      let colors = ['#a5a5ff','#ff6f6f','#fffec1','#c1ffc1','#ffc1ff'];
+      return colors[Math.floor(Math.random()*colors.length)];
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Static background
+      const imgData = ctx.createImageData(canvas.width, canvas.height);
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        let staticVal = Math.floor(Math.random() * (100 + Math.sin(t/20 + i/1000)*glitch));
+        imgData.data[i+0] = staticVal + Math.random()*entropy;
+        imgData.data[i+1] = staticVal;
+        imgData.data[i+2] = staticVal + Math.random()*remix;
+        imgData.data[i+3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // Glitching artifacts (rects, lines, error glyphs)
+      fragments = [];
+      for(let i=0; i<8; i++) {
+        let x = Math.random() * canvas.width;
+        let y = Math.random() * canvas.height;
+        let w = Math.random() * 60 + 5;
+        let h = Math.random() * 10 + 2;
+        fragments.push({x, y, w, h, idx:i});
+        ctx.save();
+        ctx.globalAlpha = 0.15 + Math.random()*0.15;
+        ctx.fillStyle = randomColor();
+        ctx.fillRect(x, y, w, h);
+        ctx.restore();
+        // Error glyphs or 'files'
+        if (Math.random() > 0.8) {
+          ctx.save();
+          ctx.globalAlpha = 0.25 + remix/500;
+          ctx.font = "bold 14px monospace";
+          ctx.fillStyle = "#e0e0e0";
+          ctx.fillText("ERR", x+Math.random()*20, y+Math.random()*20);
+          ctx.restore();
+        }
+      }
+      // Flickering waveform (signal)
+      ctx.save();
+      ctx.globalAlpha = 0.5 + Math.sin(t/20)*0.3;
+      ctx.strokeStyle = "#0bf";
+      ctx.beginPath();
+      for(let x=0;x<canvas.width;x+=4){
+        let y = canvas.height/2 + Math.sin((x+t*2)/28)*(32 + Math.sin(t/29)*14 + entropy/4);
+        ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      // Silhouettes (humans listening)
+      if (t%180<80) {
+        ctx.save();
+        ctx.globalAlpha = 0.13 + glitch/1000;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(580, 190, 18 + Math.sin(t/7)*4, 0, Math.PI*2);
+        ctx.arc(60, 170, 11 + Math.cos(t/11)*2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+      t++;
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    // Fake listener count
+    document.getElementById('listeners').textContent = listeners + " outsiders";
+
+    // Audio: noise static drone
+    let audioCtx, noise, gainNode, muted = false;
+    function startAudio() {
+      if(audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      let bufferSize = 2 * audioCtx.sampleRate;
+      let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      let output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.10;
+      noise.connect(gainNode).connect(audioCtx.destination);
+      noise.loop = true;
+      noise.start(0);
+    }
+    canvas.onclick = startAudio;
+    document.getElementById('mute').onclick = function() {
+      muted = !muted;
+      if(gainNode) gainNode.gain.value = muted ? 0 : 0.10;
+      this.textContent = muted ? "Unmute Static" : "Mute Static";
+    };
+
+    // Artifact extraction by clicking fragments
+    const artifacts = [
+      {
+        name: "fragment_01.json",
+        type: "debris",
+        content: `{
+  "title": "Lost Metadata",
+  "description": "This file arrived corrupted.",
+  "data": [
+    "error: unexpected end of input",
+    "location: ???",
+    "timestamp": "????-??-?? ??:??:??"
+  ],
+  "tags": ["debris", "unparseable", "haunt"]
+}`
+      },
+      {
+        name: "broken_toy.js",
+        type: "toy",
+        content: `// This toy does not work.
+function glitch() {
+  return x + 1; // x is not defined
+}
+glitch();`
+      },
+      {
+        name: "variant_01.js",
+        type: "remix",
+        content: `// Variant of broken_toy.js, but more unstable.
+if (Math.random() > 0.5) {
+  require('fs').readFile('/dev/null', (err, data) => {
+    throw new Error("Null read failed: " + err);
+  });
+} else {
+  let arr = [undefined];
+  console.log(arr[1].prop); // TypeError
+}`
+      },
+      {
+        name: "log_2025-09-21.txt",
+        type: "run",
+        content: `Run: toys/broken_toy.js
+Result:
+ReferenceError: x is not defined
+
+Run: remix/variant_01.js
+Result:
+TypeError: Cannot read properties of undefined (reading 'prop')`
+      },
+      {
+        name: "seed_01.txt",
+        type: "seed",
+        content: `Inside this artifact: [fragment_02.json]
+
+{
+  "message": "Seeded from a recursive extraction.",
+  "error": "hidden recursion detected",
+  "tags": ["box-within-box"]
+}`
+      }
+    ];
+    canvas.addEventListener('click', function(e){
+      startAudio();
+      let rect = canvas.getBoundingClientRect();
+      let mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      // Find a fragment under the click
+      let found = fragments.find(f => mx >= f.x && mx <= f.x+f.w && my >= f.y && my <= f.y+f.h);
+      let div = document.getElementById('artifact');
+      if(found) {
+        // Use controls to mutate output
+        let base = artifacts[found.idx % artifacts.length];
+        let mutation = remix > 65 ? `\n\n[Mutated]\n${base.content.split('').reverse().join('')}` : "";
+        let entropyMark = entropy > 70 ? "\n\n[Entropy Leak]\nERROR: UNSTABLE ARTIFACT" : "";
+        let glitchMark = glitch > 80 ? "\n\n[Glitch Noise]\n#### #### ####" : "";
+        div.style.display = 'block';
+        div.textContent = `> ${base.name} [${base.type}]\n\n${base.content}${mutation}${entropyMark}${glitchMark}`;
+      } else {
+        // Empty static click: just flicker effect
+        div.style.display = 'block';
+        div.textContent = "> static noise <";
+        setTimeout(()=>div.style.display='none',500);
+      }
+    });
+
+  </script>
+</body>
+</html>
